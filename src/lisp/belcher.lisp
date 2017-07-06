@@ -1,5 +1,3 @@
-#!/usr/bin/sbcl --script
-
 (load "~/.quicklisp/setup")
 (with-open-stream (*standard-output* (make-broadcast-stream))
   (ql:quickload "split-sequence"))
