@@ -7,5 +7,5 @@ Originally a school project written in Java, it was then ported to Common Lisp, 
 
 How to run
 ----------
-	make
-	./belcher
+    make
+    ./belcher
