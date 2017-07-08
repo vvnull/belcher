@@ -6,22 +6,6 @@
 (load "src/lisp/card.lisp")
 (load "src/lisp/game.lisp")
 
-(format t "~%Imported classes")
-
-; randomize random
-; (let ((seed (make-random-state t)))
-;  (if (> (length #'si::command-args) 1)
-    ; use seed if provided
-;    (with-open-file (stream (elt *posix-argv* 1))
-;      (setf seed (read stream)))
-    ; else write new seed
-;    (with-open-file (stream "seed"
-;                            :direction :output
-;                            :if-exists :supersede
-;                            :if-does-not-exist :create)
-;    (format stream "~S" seed)))
-;  (setf *random-state* seed))
-
 (defvar *library* '()
   "The Deck")
 
@@ -358,25 +342,42 @@
 ;  play game
 ; ============
 
-; read library
-(with-open-file (stream "belcher.deck")
-  (loop for line = (read-line stream nil 'eof)
-      until (eq line 'eof)
-    do (parse-card line)))
+(defun init ()
+    "Shuffle and draw starting hand"
+  ; randomize random
+  (setf *print-readably* t)
+  (let ((seed (make-random-state t)))
+    (if (> (length (ext:command-args)) 1)
+      ; use seed if provided
+      (with-open-file (stream (elt (ext:command-args) 1))
+        (setf seed (read stream)))
+      ; else write new seed
+      (with-open-file (stream "seed"
+                              :direction :output
+                              :if-exists :supersede
+                              :if-does-not-exist :create)
+        (print seed stream)))
+    (setf *random-state* seed))
 
-; initialize imprint scores
-(defparameter *imp* (make-list (card-index (car (last *library*))) :initial-element 0))
 
-; shuffle library
-(format *v* "~%Shuffling ~D cards" (length *library*))
-(shuffle *library*)
+  ; read library
+  (with-open-file (stream "belcher.deck")
+    (loop for line = (read-line stream nil 'eof)
+        until (eq line 'eof)
+      do (parse-card line)))
 
-; draw opening hand
-(draw-init 7)
-(format *v* "~%Drew ~D cards" (length *hand*))
+  ; initialize imprint scores
+  (defparameter *imp* (make-list (card-index (car (last *library*))) :initial-element 0))
+
+  ; shuffle library
+  (format *v* "~%Shuffling ~D cards" (length *library*))
+  (shuffle *library*)
+
+  ; draw opening hand
+  (draw-init 7)
+  (format *v* "~%Drew ~D cards" (length *hand*)))
 
 (defun meta-play ()
-  (format t "~%Starting meta-play")
   (defparameter *v* nil)
   (let ((win 0) (loss 0))
     (loop for i from 1 to 100

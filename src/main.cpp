@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
   // Bootstrap Lisp
   initialize(argc,argv);
  
+  lisp("(init)");
   lisp("(meta-play)");
  
   return EXIT_SUCCESS;
