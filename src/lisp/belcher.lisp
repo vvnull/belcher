@@ -5,6 +5,7 @@
 ; import card class
 (load "src/lisp/card.lisp")
 (load "src/lisp/game.lisp")
+(load "src/lisp/display.lisp")
 
 (defvar *library* '()
   "The Deck")
@@ -15,7 +16,7 @@
 (defvar *v* t
   "Verbose output: nil = simulation (train); t = live (test)")
 
-(defvar *log* '()
+(defvar *log* '("" "" "" "" "")
   "Output log")
 
 (defvar *imp* '()
@@ -25,6 +26,14 @@
 ; ============
 ;  functions
 ; ============
+
+(defun push-log (line game)
+    "Pushes output line onto log buffer"
+  (when *v*
+    (push line *log*)
+    (render *log* game)
+    (sleep 1)))
+
 (defun parse-card (line)
     "Parse card from deck input file"
   (let ((card-array (split-sequence:split-sequence #\, line)))
@@ -58,7 +67,7 @@
 
 (defun show-mana (mana)
     "Display mana"
-  (format *v* "~%=+= Mana =+=
+  (format nil "~%=+= Mana =+=
     C: ~D  R: ~D  G: ~D"
          (getf mana #\C)
          (getf mana #\R)
@@ -104,7 +113,7 @@
   ; use card unless it's a wincon
   (unless (or (equal (card-index card) 03)
               (equal (card-index card) 05))
-    (format *v* "~%Using ~S" (card-name card)))
+    (push-log (format nil "~%Using ~S" (card-name card)) game))
 
     ; pay mana cost
     ; unless it's a wincon
@@ -114,7 +123,7 @@
 
     ; pass priority
     (when *v*
-      (priority (read-char)))
+      (priority (read-char) game))
 
     ; add mana (if applicable)
     (loop for m across (card-mana-power card)
@@ -124,14 +133,14 @@
             ; if we have tinder wall in hand, add G
             (progn
               (incf (getf (mana game) #\G))
-              (format *v* "~%      adding mana: ~S" #\G))
+              (push-log (format nil "~%      adding mana: ~S" #\G) game))
             ; else add red
             (progn
               (incf (getf (mana game) #\R))
-              (format *v* "~%      adding mana: ~S" #\G)))
+              (push-log (format nil "~%      adding mana: ~S" #\G) game)))
           (progn
             (incf (getf (mana game) m))
-            (format *v* "~%      adding mana: ~S" m))))
+            (push-log (format nil "~%      adding mana: ~S" m) game))))
 
     ; draw cards (if applicable)
     (setf game (draw (card-draw-power card) game))
@@ -145,10 +154,10 @@
       (00 (let ((pitch (imprint-select (hand game))))
             (if pitch
               (progn
-                (format *v* "~%Imprinting ~S" (card-name pitch))
+                (push-log (format nil "~%Imprinting ~S" (card-name pitch)) game)
                 (setf (hand game) (delete pitch (hand game) :count 1))
                 (push pitch (exile game))
-                (format *v* "~%      adding mana: ~S" (card-color pitch))
+                (push-log (format nil "~%      adding mana: ~S" (card-color pitch)) game)
                 (if (equal #\H (card-color pitch))
                   (if (find-card-by-index (hand game) 15)
                     ; if we have tinder wall in hand,add G
@@ -156,13 +165,13 @@
                     ; else add red
                     (incf (getf (mana game) #\R)))
                   (incf (getf (mana game) (card-color pitch)))))
-              (format *v* "~%No imprint"))))
+              (push-log (format nil "~%No imprint") game))))
       ; empty the warrens
-      (03 (format *v* "~%Don't cast ~S" (card-name card))
+      (03 (push-log (format nil "~%Don't cast ~S" (card-name card)) game)
           ; don't use until we're going off
           (return-from use nil))
       ; goblin charbelcher
-      (05 (format *v* "~%Don't cast ~S" (card-name card))
+      (05 (push-log (format nil "~%Don't cast ~S" (card-name card)) game)
           ; don't use until we're going off
           (return-from use nil))
       ; land grant
@@ -172,7 +181,7 @@
       (11 
           (loop for c in (gy game)
             do (when (equal (card-index c) 11)
-                 (format *v* "~%      adding mana: #\R")
+                 (push-log (format nil "~%      adding mana: #\R") game)
                  (incf (getf (mana game) #\R))))))
   ; send card to destination
     (case (dest card)
@@ -204,8 +213,8 @@
     (let ((rem-cost (1- (card-cost card))))
       (loop while (plusp rem-cost)
         do
-          (format *v* "~%rem-cost: ~S" rem-cost)
-          (show-mana (mana game))
+;          (format *v* "~%rem-cost: ~S" rem-cost)
+;          (show-mana (mana game))
           (when *v* (sleep 0.5))
           (if
             (cond
@@ -281,7 +290,7 @@
       ; if we don't flip a card, return count
       (if reveal
         (progn
-          (format *v* "~%        ~S" (card-name reveal))
+          (push-log (format nil "~%        ~S" (card-name reveal)) game)
           (push reveal (exile game))
           (incf cnt)
           (when (equal (card-index reveal) 14)
@@ -314,21 +323,21 @@
     (setf win (block wincon
                 (loop for c in (hand game)
                   do
-                    (format *v* "~%Checking ~S" (card-name c))
+                    (push-log (format nil "~%Checking ~S" (card-name c)) game)
                     (when (can-use c game)
-                      (format *v* "~%Using ~S" (card-name c))
+                      (push-log (format nil "~%Using ~S" (card-name c)) game)
                       (setf (hand game) (delete c (hand game) :count 1))
                       (case (card-index c)
                         ; empty the warrens
                         (03
                           (incf (storm game))
-                          (format *v* "~%    ~S 1/1 Goblins" (* 2 (storm game)))
+                          (push-log (format nil "~%    ~S 1/1 Goblins" (* 2 (storm game))) game)
                           (return-from wincon c))
                         ; goblin charbelcher
                         (05
-                          (format *v* "~%    Firing Charbelcher:")
-                          (format *v* "~%    ~S damage!" (belch game))))
-                          (return-from wincon c)))))
+                          (push-log (format nil "~%    Firing Charbelcher:") game)
+                          (push-log (format nil "~%    ~S damage!" (belch game)) game)
+                          (return-from wincon c)))))))
     (show-game-zones game)
     (return-from play win)))
 
@@ -344,15 +353,15 @@
   (format *v*  "~%=x= Exile =x=")
   (reveal (exile game)))
 
-(defun priority (response)
+(defun priority (response game)
     "Priority"
   (case response
     (#\return return)
     ((#\c #\C)
-      (print "Countered!")
+      (push-log (format nil "~%Countered!") game)
       (read-char))
     ((#\r #\R)
-      (print "Responding..."))))
+      (push-log (format nil "Responding...") game))))
 
 ; ============
 ;  play game
@@ -386,12 +395,13 @@
   (defparameter *imp* (make-list (card-index (car (last *library*))) :initial-element 0))
 
   ; shuffle library
-  (format *v* "~%Shuffling ~D cards" (length *library*))
+  (format t "~%Shuffling ~D cards" (length *library*))
   (shuffle *library*)
 
   ; draw opening hand
   (draw-init 7)
-  (format *v* "~%Drew ~D cards" (length *hand*)))
+  (format t "~%Drew ~D cards" (length *hand*))
+  (sleep 2))
 
 (defun meta-play ()
   (defparameter *v* nil)
