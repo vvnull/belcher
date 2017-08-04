@@ -20,7 +20,7 @@ cl_object lisp(const std::string & call) {
 
 void initialize(int argc, char *argv[]) {
  
- // Bootstrap
+  // Bootstrap
   cl_boot(argc, argv);
   atexit(cl_shutdown);
  

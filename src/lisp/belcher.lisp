@@ -15,6 +15,9 @@
 (defvar *v* t
   "Verbose output: nil = simulation (train); t = live (test)")
 
+(defvar *log* '()
+  "Output log")
+
 (defvar *imp* '()
   "Imprint scores")
 
@@ -108,6 +111,10 @@
     (unless (or (equal (card-index card) 03)
                 (equal (card-index card) 05))
       (setf game (pay-cost card game)))
+
+    ; pass priority
+    (when *v*
+      (priority (read-char)))
 
     ; add mana (if applicable)
     (loop for m across (card-mana-power card)
@@ -337,6 +344,15 @@
   (format *v*  "~%=x= Exile =x=")
   (reveal (exile game)))
 
+(defun priority (response)
+    "Priority"
+  (case response
+    (#\return return)
+    ((#\c #\C)
+      (print "Countered!")
+      (read-char))
+    ((#\r #\R)
+      (print "Responding..."))))
 
 ; ============
 ;  play game
