@@ -404,7 +404,6 @@
 
 (defun meta-play ()
   (defparameter *v* nil)
-  (defparameter *v* t)
   (let ((win 0) (loss 0))
     (loop for i from 1 to 100
       do
