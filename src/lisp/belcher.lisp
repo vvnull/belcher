@@ -133,14 +133,14 @@
             ; if we have tinder wall in hand, add G
             (progn
               (incf (getf (mana game) #\G))
-              (push-log (format nil "      adding mana: ~S" #\G) game))
+              (push-log (format nil "      Adding mana: ~S" #\G) game))
             ; else add red
             (progn
               (incf (getf (mana game) #\R))
-              (push-log (format nil "      adding mana: ~S" #\R) game)))
+              (push-log (format nil "      Adding mana: ~S" #\R) game)))
           (progn
             (incf (getf (mana game) m))
-            (push-log (format nil "      adding mana: ~S" m) game))))
+            (push-log (format nil "      Adding mana: ~S" m) game))))
 
     ; draw cards (if applicable)
     (setf game (draw (card-draw-power card) game))
@@ -157,7 +157,7 @@
                 (push-log (format nil "Imprinting ~S" (card-name pitch)) game)
                 (setf (hand game) (delete pitch (hand game) :count 1))
                 (push pitch (exile game))
-                (push-log (format nil "      adding mana: ~S" (card-color pitch)) game)
+                (push-log (format nil "      Adding mana: ~S" (card-color pitch)) game)
                 (if (equal #\H (card-color pitch))
                   (if (find-card-by-index (hand game) 15)
                     ; if we have tinder wall in hand,add G
@@ -167,11 +167,11 @@
                   (incf (getf (mana game) (card-color pitch)))))
               (push-log (format nil "No imprint") game))))
       ; empty the warrens
-      (03 (push-log (format nil "Don't cast ~S" (card-name card)) game)
+      (03
           ; don't use until we're going off
           (return-from use nil))
       ; goblin charbelcher
-      (05 (push-log (format nil "Don't cast ~S" (card-name card)) game)
+      (05
           ; don't use until we're going off
           (return-from use nil))
       ; land grant
@@ -181,7 +181,7 @@
       (11 
           (loop for c in (gy game)
             do (when (equal (card-index c) 11)
-                 (push-log (format nil "      adding mana: #\R") game)
+                 (push-log (format nil "      Adding mana: #\R") game)
                  (incf (getf (mana game) #\R))))))
   ; send card to destination
     (case (dest card)
@@ -272,11 +272,11 @@
       (push card (hand game))
       (setf (lib game) (delete card (lib game) :count 1))
       (when do-reveal 
-        (format *v* "Tutor for ~S" (card-name card))))
+        (push-log (format nil "      Tutor for ~S" (card-name card)) game)))
     (return-from tutor game)))
 
 (defun find-card-by-index (pile idx)
-    "Finds a card in lib having index idx"
+    "Finds a card in pile having index idx"
   (loop for c in pile do
     (when (equal (card-index c) idx)
       (return-from find-card-by-index c))))
@@ -323,7 +323,6 @@
     (setf win (block wincon
                 (loop for c in (hand game)
                   do
-                    (push-log (format nil "Checking ~S" (card-name c)) game)
                     (when (can-use c game)
                       (push-log (format nil "Using ~S" (card-name c)) game)
                       (setf (hand game) (delete c (hand game) :count 1))
@@ -405,16 +404,22 @@
 
 (defun meta-play ()
   (defparameter *v* nil)
+  (defparameter *v* t)
   (let ((win 0) (loss 0))
     (loop for i from 1 to 100
       do
+(format t "~D" i)
         (let ((game (make-instance 'game
                 :lib  (copy-list *library*)
                 :hand (copy-list *hand*))))
           (shuffle (lib game))
           (if (play game)
+(progn (format t "W")
             (incf win)
+)
+(progn (format t "L")
             (incf loss))))
+)
     (format t "~%Wins:   ~S~%Losses: ~S~%" win loss)
     (format t "Win rate:  ~S~%" (/ win (+ win loss))))
 
