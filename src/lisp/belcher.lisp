@@ -408,18 +408,13 @@
   (let ((win 0) (loss 0))
     (loop for i from 1 to 100
       do
-(format t "~D" i)
         (let ((game (make-instance 'game
                 :lib  (copy-list *library*)
                 :hand (copy-list *hand*))))
           (shuffle (lib game))
           (if (play game)
-(progn (format t "W")
             (incf win)
-)
-(progn (format t "L")
             (incf loss))))
-)
     (format t "~%Wins:   ~S~%Losses: ~S~%" win loss)
     (format t "Win rate:  ~S~%" (/ win (+ win loss))))
 
